@@ -1,30 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import TaskModal from "./TaskModal";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
+import { AuthContext } from "../../Providers/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
 // Fetch tasks from the backend
 const fetchTasks = async () => {
-  const response = await fetch("http://localhost:5000/tasks");
+  const response = await fetch("https://task-flow-server-lyart.vercel.app/tasks");
   return response.json();
 };
 
 const Home = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [isModalOpen, setModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch tasks using react-query
+  useEffect(() => {
+    if (!user) {
+      navigate("/signin");
+    }
+  }, [user, navigate]);
+
   const { data: tasks = [], isLoading, isError } = useQuery({
     queryKey: ["tasks"],
     queryFn: fetchTasks,
   });
 
-  // Mutation to add a task
   const addTaskMutation = useMutation({
     mutationFn: async (taskData) => {
-      const response = await fetch("http://localhost:5000/tasks", {
+      const response = await fetch("https://task-flow-server-lyart.vercel.app/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(taskData),
@@ -40,11 +48,10 @@ const Home = () => {
     },
   });
 
-  // Mutation to edit an existing task
   const editTaskMutation = useMutation({
     mutationFn: async (taskData) => {
-      const response = await fetch(`http://localhost:5000/tasks/${taskData._id}`, {
-        method: "PATCH",  // Use PATCH for updating task status
+      const response = await fetch(`https://task-flow-server-lyart.vercel.app/tasks/${taskData._id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(taskData),
       });
@@ -59,10 +66,9 @@ const Home = () => {
     },
   });
 
-  // Mutation to delete a task
   const deleteTaskMutation = useMutation({
     mutationFn: async (taskId) => {
-      const response = await fetch(`http://localhost:5000/tasks/${taskId}`, {
+      const response = await fetch(`https://task-flow-server-lyart.vercel.app/tasks/${taskId}`, {
         method: "DELETE",
       });
       return response.json();
@@ -76,7 +82,6 @@ const Home = () => {
     },
   });
 
-  // Handle task deletion
   const handleDelete = (taskId) => {
     Swal.fire({
       title: "Are you sure?",
@@ -92,24 +97,21 @@ const Home = () => {
     });
   };
 
-  // Handle task edit
   const handleEdit = (task) => {
-    setTaskToEdit(task); // Prefill task data in modal
-    setModalOpen(true);   // Open modal for editing
+    setTaskToEdit(task);
+    setModalOpen(true);
   };
 
-  // Handle add or update task
   const handleAddTask = (taskData) => {
     if (taskData._id) {
-      editTaskMutation.mutate(taskData);  // Edit existing task
+      editTaskMutation.mutate(taskData);
     } else {
-      addTaskMutation.mutate(taskData);  // Add new task
+      addTaskMutation.mutate(taskData);
     }
-    setModalOpen(false); // Close modal after adding/editing task
-    setTaskToEdit(null); // Reset task data
+    setModalOpen(false);
+    setTaskToEdit(null);
   };
 
-  // Categorize tasks by status
   const tasksByStatus = {
     "To Do": tasks.filter((task) => task.status === "To Do"),
     "In Progress": tasks.filter((task) => task.status === "In Progress"),
@@ -174,13 +176,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Task Modal */}
-      <TaskModal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
-        addTask={handleAddTask}
-        taskToEdit={taskToEdit}  // Pass task data to the modal for editing
-      />
+      <TaskModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} addTask={handleAddTask} taskToEdit={taskToEdit} />
     </div>
   );
 };

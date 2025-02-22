@@ -1,11 +1,21 @@
-import { useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { AuthContext } from "../../Providers/AuthProvider";
 
 const Navbar = () => {
     const { user, logOut } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        // If user is not logged in, redirect to sign-in page
+        if (!user && location.pathname !== "/signin") {
+            navigate("/signin");
+        } else if (user && location.pathname === "/signin") {
+            navigate("/"); // Redirect logged-in users to home
+        }
+    }, [user, navigate, location]);
 
     const handleLogout = async () => {
         try {
@@ -16,7 +26,7 @@ const Navbar = () => {
                 icon: "success",
                 confirmButtonText: "OK"
             }).then(() => {
-                navigate("/signin"); // Redirect to sign-in page after logout
+                navigate("/signin");
             });
         } catch (error) {
             Swal.fire({

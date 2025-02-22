@@ -46,7 +46,7 @@ const AuthProvider = ({ children }) => {
             setUser(result.user);
 
             // Store user in backend
-            await fetch("http://localhost:5000/user", {
+            await fetch("https://task-flow-server-lyart.vercel.app/user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData),
