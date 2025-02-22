@@ -6,9 +6,10 @@ import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { AuthContext } from "../../Providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
-// Fetch tasks from the backend
-const fetchTasks = async () => {
-  const response = await fetch("https://task-flow-server-lyart.vercel.app/tasks");
+// Fetch tasks from the backend for the logged-in user only
+const fetchTasks = async (userEmail) => {
+  if (!userEmail) return [];
+  const response = await fetch(`https://task-flow-server-lyart.vercel.app/tasks?userEmail=${userEmail}`);
   return response.json();
 };
 
@@ -26,8 +27,9 @@ const Home = () => {
   }, [user, navigate]);
 
   const { data: tasks = [], isLoading, isError } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: fetchTasks,
+    queryKey: ["tasks", user?.email],
+    queryFn: () => fetchTasks(user?.email),
+    enabled: !!user?.email, // Fetch tasks only when the user is logged in
   });
 
   const addTaskMutation = useMutation({
@@ -35,7 +37,7 @@ const Home = () => {
       const response = await fetch("https://task-flow-server-lyart.vercel.app/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(taskData),
+        body: JSON.stringify({ ...taskData, userEmail: user?.email }),
       });
       return response.json();
     },
@@ -51,7 +53,7 @@ const Home = () => {
   const editTaskMutation = useMutation({
     mutationFn: async (taskData) => {
       const response = await fetch(`https://task-flow-server-lyart.vercel.app/tasks/${taskData._id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(taskData),
       });

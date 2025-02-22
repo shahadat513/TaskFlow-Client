@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Swal from "sweetalert2";
+import { AuthContext } from "../../Providers/AuthProvider"; // Import AuthContext to get user email
 
 const TaskModal = ({ isOpen, onClose, addTask, taskToEdit }) => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("To Do");
     const [loading, setLoading] = useState(false);
+    const { user } = useContext(AuthContext); // Get logged-in user's email
 
     useEffect(() => {
         if (taskToEdit) {
@@ -29,10 +31,21 @@ const TaskModal = ({ isOpen, onClose, addTask, taskToEdit }) => {
             return;
         }
 
-        const taskData = { title, description, status, _id: taskToEdit?._id };
+        if (!user?.email) {
+            Swal.fire("Error", "User email is missing!", "error");
+            setLoading(false);
+            return;
+        }
+
+        const taskData = {
+            title,
+            description,
+            status,
+            userEmail: user.email, // ✅ Add logged-in user's email
+            _id: taskToEdit?._id,
+        };
 
         addTask(taskData);
-
         setLoading(false);
     };
 
